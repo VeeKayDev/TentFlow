@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaFlow - Instagram Content Generator & Strategy Workflow Studio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            purple: '#833ab4',
+                            pink: '#fd1d1d',
+                            orange: '#fcb045'
+                        },
+                        darkbg: '#0F1117',
+                        darkcard: '#181B24',
+                        darkborder: '#2A2E3D'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- HTML2Canvas for slide exports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #181B24;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2A2E3D;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3F4457;
+        }
+        .ig-gradient {
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        }
+        .ig-gradient-text {
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .slide-aspect-4-5 {
+            aspect-ratio: 4 / 5;
+        }
+        .slide-aspect-1-1 {
+            aspect-ratio: 1 / 1;
+        }
+    </style>
+</head>
+<body class="bg-darkbg text-gray-100 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Top Header -->
+    <header class="border-b border-darkborder bg-darkcard/80 backdrop-blur-md sticky top-0 z-50 px-4 lg:px-8 py-3.5 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl ig-gradient flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+                <i data-lucide="instagram" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg tracking-tight flex items-center gap-2">
+                    InstaFlow <span class="text-xs bg-brand-500/20 text-brand-500 border border-brand-500/30 px-2 py-0.5 rounded-full font-medium">Studio v2.5</span>
+                </h1>
+                <p class="text-xs text-gray-400">Instagram Content Strategy & Dynamic Post Studio</p>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="hidden md:flex items-center space-x-1 bg-darkbg p-1 rounded-xl border border-darkborder">
+            <button onclick="switchTab('generator')" id="tab-btn-generator" class="tab-btn active px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 bg-brand-600 text-white shadow">
+                <i data-lucide="sparkles" class="w-4 h-4"></i> Generator & Preview
+            </button>
+            <button onclick="switchTab('feed')" id="tab-btn-feed" class="tab-btn px-4 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white transition-all flex items-center gap-2">
+                <i data-lucide="grid" class="w-4 h-4"></i> 3x3 Feed Simulator
+            </button>
+            <button onclick="switchTab('calendar')" id="tab-btn-calendar" class="tab-btn px-4 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white transition-all flex items-center gap-2">
+                <i data-lucide="calendar" class="w-4 h-4"></i> Planner Calendar
+            </button>
+        </nav>
+
+        <div class="flex items-center space-x-3">
+            <button onclick="exportCurrentPost()" class="hidden sm:flex items-center gap-2 text-xs bg-darkborder hover:bg-gray-700 text-white px-3 py-2 rounded-lg font-medium transition-colors border border-gray-600">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Summary
+            </button>
+            <button onclick="saveToPlanner()" class="flex items-center gap-2 text-xs bg-gradient-to-r from-brand-600 to-brand-purple hover:opacity-90 text-white px-4 py-2 rounded-lg font-semibold transition-all shadow-md">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Add to Calendar
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Navigation Bar -->
+    <div class="md:hidden flex border-b border-darkborder bg-darkbg px-2 py-1 justify-around">
+        <button onclick="switchTab('generator')" id="mob-tab-generator" class="p-2 text-brand-500 font-medium text-xs flex flex-col items-center gap-1">
+            <i data-lucide="sparkles" class="w-4 h-4"></i> Studio
+        </button>
+        <button onclick="switchTab('feed')" id="mob-tab-feed" class="p-2 text-gray-400 font-medium text-xs flex flex-col items-center gap-1">
+            <i data-lucide="grid" class="w-4 h-4"></i> Feed
+        </button>
+        <button onclick="switchTab('calendar')" id="mob-tab-calendar" class="p-2 text-gray-400 font-medium text-xs flex flex-col items-center gap-1">
+            <i data-lucide="calendar" class="w-4 h-4"></i> Calendar
+        </button>
+    </div>
+
+    <!-- Main Workspace Container -->
+    <main class="flex-1 p-4 lg:p-6 max-w-[1600px] w-full mx-auto">
+
+        <!-- ================= SECTION 1: STUDIO / GENERATOR ================= -->
+        <div id="view-generator" class="view-panel grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Column: Input Form & Controls -->
+            <div class="lg:col-span-5 flex flex-col space-y-5">
+                
+                <!-- Quick Preset Selector -->
+                <div class="bg-darkcard border border-darkborder rounded-2xl p-4 shadow-sm">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2 flex items-center justify-between">
+                        <span>Strategy Presets</span>
+                        <span class="text-[10px] text-brand-500 bg-brand-500/10 px-2 py-0.5 rounded">Auto-fill Ideas</span>
+                    </label>
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <button onclick="applyPreset('design_tips')" class="text-left p-2.5 rounded-xl border border-darkborder hover:border-brand-500/50 bg-darkbg/50 hover:bg-darkbg transition-all group">
+                            <div class="text-xs font-semibold text-white group-hover:text-brand-500 flex items-center gap-1.5">
+                                <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-yellow-400"></i> Quick Design Tips
+                            </div>
+                            <div class="text-[10px] text-gray-400 mt-0.5 truncate">3 actionable UI/UX rules</div>
+                        </button>
+                        <button onclick="applyPreset('case_study')" class="text-left p-2.5 rounded-xl border border-darkborder hover:border-brand-500/50 bg-darkbg/50 hover:bg-darkbg transition-all group">
+                            <div class="text-xs font-semibold text-white group-hover:text-brand-500 flex items-center gap-1.5">
+                                <i data-lucide="trending-up" class="w-3.5 h-3.5 text-green-400"></i> Growth Case Study
+                            </div>
+                            <div class="text-[10px] text-gray-400 mt-0.5 truncate">How we got 10k followers</div>
+                        </button>
+                        <button onclick="applyPreset('step_guide')" class="text-left p-2.5 rounded-xl border border-darkborder hover:border-brand-500/50 bg-darkbg/50 hover:bg-darkbg transition-all group">
+                            <div class="text-xs font-semibold text-white group-hover:text-brand-500 flex items-center gap-1.5">
+                                <i data-lucide="layers" class="w-3.5 h-3.5 text-blue-400"></i> Step-by-Step Guide
+                            </div>
+                            <div class="text-[10px] text-gray-400 mt-0.5 truncate">5-stage workflow tutorial</div>
+                        </button>
+                        <button onclick="applyPreset('showcase')" class="text-left p-2.5 rounded-xl border border-darkborder hover:border-brand-500/50 bg-darkbg/50 hover:bg-darkbg transition-all group">
+                            <div class="text-xs font-semibold text-white group-hover:text-brand-500 flex items-center gap-1.5">
+                                <i data-lucide="layout" class="w-3.5 h-3.5 text-purple-400"></i> Portfolio Showcase
+                            </div>
+                            <div class="text-[10px] text-gray-400 mt-0.5 truncate">Before & After project reveal</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Input Form -->
+                <div class="bg-darkcard border border-darkborder rounded-2xl p-5 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between border-b border-darkborder pb-3">
+                        <h2 class="font-bold text-base flex items-center gap-2">
+                            <i data-lucide="pen-tool" class="w-4 h-4 text-brand-500"></i> Content Blueprint
+                        </h2>
+                        <!-- Post Format Selector -->
+                        <div class="flex bg-darkbg p-1 rounded-lg border border-darkborder">
+                            <button onclick="setFormat('carousel')" id="fmt-btn-carousel" class="px-3 py-1 rounded text-xs font-semibold bg-brand-600 text-white transition-all">Carousel</button>
+                            <button onclick="setFormat('reel')" id="fmt-btn-reel" class="px-3 py-1 rounded text-xs font-semibold text-gray-400 hover:text-white transition-all">Reel Script</button>
+                        </div>
+                    </div>
+
+                    <!-- Topic / Title -->
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Post Title / Main Topic</label>
+                        <input type="text" id="input-topic" oninput="updateContent()" placeholder="e.g. 3 Graphic Design Mistakes Killing Your Reach" class="w-full bg-darkbg border border-darkborder rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-brand-500 transition-colors text-white">
+                    </div>
+
+                    <!-- The Hook (First slide / Video Intro) -->
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1 flex justify-between">
+                            <span>The Hook (Attracts attention)</span>
+                            <span class="text-[10px] text-gray-400">First 2 Sec / Slide 1</span>
+                        </label>
+                        <input type="text" id="input-hook" oninput="updateContent()" placeholder="e.g. STOP using boring fonts! Do this instead..." class="w-full bg-darkbg border border-darkborder rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-brand-500 transition-colors text-white">
+                    </div>
+
+                    <!-- Main Value Points -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-medium text-gray-300">Value Points (1 per Carousel slide or Reel scene)</label>
+                            <button onclick="addValuePoint()" class="text-[11px] text-brand-500 hover:underline font-medium flex items-center gap-1">
+                                <i data-lucide="plus" class="w-3 h-3"></i> Add Slide
+                            </button>
+                        </div>
+                        <div id="value-points-container" class="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                            <!-- Dynamic inputs added here -->
+                        </div>
+                    </div>
+
+                    <!-- Call to Action (CTA) -->
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Call To Action (CTA)</label>
+                        <input type="text" id="input-cta" oninput="updateContent()" placeholder="e.g. Save this post for your next client project! 💾" class="w-full bg-darkbg border border-darkborder rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-brand-500 transition-colors text-white">
+                    </div>
+
+                    <!-- Caption & Hashtags -->
+                    <div class="pt-2 border-t border-darkborder">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-medium text-gray-300">Auto Caption & Hashtags</label>
+                            <button onclick="generateHashtags()" class="text-[11px] text-brand-purple hover:underline font-medium flex items-center gap-1">
+                                <i data-lucide="hash" class="w-3 h-3"></i> Auto Hashtags
+                            </button>
+                        </div>
+                        <textarea id="input-caption" rows="3" oninput="updateContent()" placeholder="Caption auto-compiles here..." class="w-full bg-darkbg border border-darkborder rounded-xl p-3 text-xs focus:outline-none focus:border-brand-500 text-gray-200 resize-none"></textarea>
+                        
+                        <div class="flex justify-end gap-2 mt-2">
+                            <button onclick="copyCaption()" class="text-xs bg-darkbg hover:bg-gray-800 text-gray-200 border border-darkborder px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Caption
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Interactive Visual Canvas Preview -->
+            <div class="lg:col-span-7 flex flex-col space-y-5">
+                
+                <!-- Preview Toolbar -->
+                <div class="bg-darkcard border border-darkborder rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Canvas Style:</span>
+                        <!-- Theme Styles -->
+                        <div class="flex items-center space-x-1.5">
+                            <button onclick="setThemeStyle('dark')" class="w-6 h-6 rounded-full bg-gray-900 border-2 border-brand-500 focus:outline-none" title="Dark Theme"></button>
+                            <button onclick="setThemeStyle('gradient')" class="w-6 h-6 rounded-full ig-gradient border border-transparent focus:outline-none" title="Instagram Gradient"></button>
+                            <button onclick="setThemeStyle('minimal')" class="w-6 h-6 rounded-full bg-slate-100 border border-transparent focus:outline-none" title="Clean Light"></button>
+                            <button onclick="setThemeStyle('neon')" class="w-6 h-6 rounded-full bg-purple-950 border border-pink-500 focus:outline-none" title="Neon Purple"></button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-3">
+                        <!-- Aspect Ratio Selector -->
+                        <span class="text-xs font-semibold text-gray-400 uppercase">Ratio:</span>
+                        <div class="flex bg-darkbg p-0.5 rounded-lg border border-darkborder">
+                            <button onclick="setAspectRatio('4-5')" id="ratio-btn-4-5" class="px-2.5 py-1 text-[11px] font-bold rounded bg-brand-600 text-white">4:5 Portrait</button>
+                            <button onclick="setAspectRatio('1-1')" id="ratio-btn-1-1" class="px-2.5 py-1 text-[11px] font-bold rounded text-gray-400 hover:text-white">1:1 Square</button>
+                        </div>
+
+                        <button onclick="downloadCurrentSlide()" class="text-xs bg-brand-500/20 hover:bg-brand-500/30 text-brand-500 border border-brand-500/30 px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-medium transition-colors">
+                            <i data-lucide="image" class="w-3.5 h-3.5"></i> Download Slide Image
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CAROUSEL VISUAL PREVIEW CONTAINER -->
+                <div id="carousel-view-container" class="bg-darkcard border border-darkborder rounded-2xl p-6 flex flex-col items-center justify-center min-h-[520px] relative">
+                    
+                    <!-- Slide Navigation Indicator -->
+                    <div class="mb-4 flex items-center justify-between w-full max-w-sm">
+                        <span id="slide-counter" class="text-xs font-mono text-gray-400 bg-darkbg px-3 py-1 rounded-full border border-darkborder">
+                            Slide 1 of 5
+                        </span>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="prevSlide()" class="p-2 rounded-xl bg-darkbg border border-darkborder hover:bg-gray-800 text-white transition-colors">
+                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="nextSlide()" class="p-2 rounded-xl bg-darkbg border border-darkborder hover:bg-gray-800 text-white transition-colors">
+                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Slide Display Canvas Frame -->
+                    <div id="slide-canvas" class="slide-aspect-4-5 w-full max-w-sm rounded-2xl bg-gray-900 border border-gray-700/60 p-6 flex flex-col justify-between shadow-2xl transition-all relative overflow-hidden text-white select-none">
+                        
+                        <!-- Header / Handle -->
+                        <div class="flex justify-between items-center border-b border-white/10 pb-3">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full ig-gradient flex items-center justify-center text-[10px] font-bold">IF</div>
+                                <span class="text-xs font-semibold tracking-wide opacity-90">@yourhandle</span>
+                            </div>
+                            <span id="slide-badge" class="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-white/10 backdrop-blur-md border border-white/20">
+                                HOOK
+                            </span>
+                        </div>
+
+                        <!-- Slide Main Content area -->
+                        <div id="slide-content-body" class="my-auto py-4 flex flex-col justify-center">
+                            <h2 id="slide-title" class="text-xl font-extrabold tracking-tight leading-snug text-white mb-2">
+                                3 Design Mistakes Killing Your Reach
+                            </h2>
+                            <p id="slide-desc" class="text-sm font-normal text-gray-200 leading-relaxed opacity-90">
+                                Swipe through to fix these instantly and double your audience engagement! 🚀
+                            </p>
+                        </div>
+
+                        <!-- Footer Decorator -->
+                        <div class="border-t border-white/10 pt-3 flex justify-between items-center text-[10px] opacity-75">
+                            <div class="flex items-center gap-1">
+                                <i data-lucide="arrow-right-circle" class="w-3.5 h-3.5 text-brand-500"></i>
+                                <span>SWIPE FOR MORE</span>
+                            </div>
+                            <span id="slide-dots-indicator" class="flex space-x-1">
+                                <!-- Dots generated dynamically -->
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Reel Script Alternative View -->
+                    <div id="reel-script-canvas" class="hidden w-full max-w-lg bg-darkbg border border-darkborder rounded-2xl p-5 space-y-4 shadow-xl">
+                        <div class="flex items-center justify-between border-b border-darkborder pb-3">
+                            <span class="text-xs font-bold text-brand-500 flex items-center gap-1.5 uppercase tracking-wider">
+                                <i data-lucide="video" class="w-4 h-4"></i> Reel Teleprompter / Script Breakdown
+                            </span>
+                            <span class="text-[10px] text-gray-400">Est. Duration: 15-30s</span>
+                        </div>
+
+                        <div class="space-y-3 text-xs">
+                            <div class="p-3 bg-darkcard rounded-xl border border-darkborder">
+                                <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider block mb-1">0:00 - 0:03 | Hook & Visual</span>
+                                <p id="reel-hook-text" class="font-semibold text-white text-sm">"Stop scrolling! If you design posts like this, you're losing followers."</p>
+                                <span class="text-[10px] text-gray-400 mt-1 block">🎥 Visual: Fast cut showing a bad example vs good example.</span>
+                            </div>
+
+                            <div class="p-3 bg-darkcard rounded-xl border border-darkborder">
+                                <span class="text-[10px] font-bold text-yellow-400 uppercase tracking-wider block mb-1">0:03 - 0:20 | Core Value / Scene Body</span>
+                                <div id="reel-body-text" class="space-y-1 text-gray-300">
+                                    <!-- Dynamic reel points -->
+                                </div>
+                                <span class="text-[10px] text-gray-400 mt-1 block">🎵 Audio Suggestion: Trending upbeat Lo-Fi or minimal techno beat.</span>
+                            </div>
+
+                            <div class="p-3 bg-darkcard rounded-xl border border-darkborder">
+                                <span class="text-[10px] font-bold text-green-400 uppercase tracking-wider block mb-1">0:20 - 0:30 | Call To Action</span>
+                                <p id="reel-cta-text" class="font-semibold text-white">"Comment 'GUIDE' below and I'll DM you my free template bundle!"</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ================= SECTION 2: 3x3 FEED SIMULATOR ================= -->
+        <div id="view-feed" class="view-panel hidden max-w-4xl mx-auto space-y-6">
+            
+            <div class="bg-darkcard border border-darkborder rounded-2xl p-6 shadow-sm">
+                <div class="flex flex-col sm:flex-row items-center gap-6 border-b border-darkborder pb-6">
+                    <!-- Profile Avatar -->
+                    <div class="w-20 h-20 rounded-full p-1 ig-gradient flex-shrink-0">
+                        <div class="w-full h-full bg-darkbg rounded-full p-1">
+                            <div class="w-full h-full bg-gray-800 rounded-full flex items-center justify-center font-bold text-xl text-white">
+                                IF
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Info -->
+                    <div class="flex-1 text-center sm:text-left space-y-2">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                            <h2 class="font-bold text-lg text-white">yourbrand_official</h2>
+                            <span class="bg-darkbg text-xs px-3 py-1 rounded-lg border border-darkborder text-gray-300">Design & Growth Studio</span>
+                        </div>
+                        <div class="flex justify-center sm:justify-start gap-6 text-xs text-gray-300">
+                            <span><strong class="text-white">124</strong> posts</span>
+                            <span><strong class="text-white">14.2k</strong> followers</span>
+                            <span><strong class="text-white">480</strong> following</span>
+                        </div>
+                        <p class="text-xs text-gray-400 leading-normal">
+                            ✨ Daily Tips for Designers & Creators<br>
+                            🚀 Helping you turn followers into paying clients<br>
+                            👇 Grab free templates & resources below
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 3x3 Grid Layout -->
+                <div class="mt-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold flex items-center gap-2">
+                            <i data-lucide="grid" class="w-4 h-4 text-brand-500"></i> Visual Aesthetic Planner (3x3 Grid)
+                        </h3>
+                        <span class="text-xs text-gray-400">Previews current generated post at Slot #1</span>
+                    </div>
+
+                    <div id="instagram-grid-container" class="grid grid-cols-3 gap-1.5 sm:gap-3">
+                        <!-- 9 Grid Items Rendered Here -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ================= SECTION 3: PLANNER CALENDAR ================= -->
+        <div id="view-calendar" class="view-panel hidden space-y-6">
+            
+            <div class="bg-darkcard border border-darkborder rounded-2xl p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h2 class="font-bold text-lg flex items-center gap-2">
+                        <i data-lucide="calendar" class="w-5 h-5 text-brand-500"></i> Weekly Content Schedule
+                    </h2>
+                    <p class="text-xs text-gray-400">Map out your strategy pillars and scheduled posts for the week</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs bg-darkbg border border-darkborder px-3 py-1.5 rounded-lg text-gray-300">Current Week</span>
+                    <button onclick="clearCalendar()" class="text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                        Clear Week
+                    </button>
+                </div>
+            </div>
+
+            <!-- Calendar Days (Mon - Sun) -->
+            <div class="grid grid-cols-1 md:grid-cols-7 gap-3">
+                
+                <!-- Mon -->
+                <div class="bg-darkcard border border-darkborder rounded-xl p-3 flex flex-col min-h-[220px]">
+                    <div class="flex justify-between items-center border-b border-darkborder pb-2 mb-2">
+                        <span class="text-xs font-bold text-gray-300">Mon</span>
+                        <span class="text-[10px] bg-brand-500/10 text-brand-500 px-1.5 py-0.5 rounded font-mono">Reel</span>
+                    </div>
+                    <div id="day-mon" class="flex-1 space-y-2">
+                        <!-- Post Cards Inserted Here -->
+                    </div>
+                </div>
+
+                <!-- Tue -->
+                <div class="bg-darkcard border border-darkborder rounded-xl p-3 flex flex-col min-h-[220px]">
+                    <div class="flex justify-between items-center border-b border-darkborder pb-2 mb-2">
+                        <span class="text-xs font-bold text-gray-300">Tue</span>
+                        <span class="text-[10px] bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded font-mono">Carousel</span>
+                    </div>
+                    <div id="day-tue" class="flex-1 space-y-2"></div>
+                </div>
+
+                <!-- Wed -->
+                <div class="bg-darkcard border border-darkborder rounded-xl p-3 flex flex-col min-h-[220px]">
+                    <div class="flex justify-between items-center border-b border-darkborder pb-2 mb-2">
+                        <span class="text-xs font-bold text-gray-300">Wed</span>
+                        <span class="text-[10px] bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded font-mono">Story</span>
+                    </div>
+                    <div id="day-wed" class="flex-1 space-y-2"></div>
+                </div>
+
+                <!-- Thu -->
+                <div class="bg-darkcard border border-darkborder rounded-xl p-3 flex flex-col min-h-[220px]">
+                    <div class="flex justify-between items-center border-b border-darkborder pb-2 mb-2">
+                        <span class="text-xs font-bold text-gray-300">Thu</span>
+                        <span class="text-[10px] bg-brand-500/10 text-brand-500 px-1.5 py-0.5 rounded font-mono">Reel</span>
+                    </div>
+                    <div id="day-thu" class="flex-1 space-y-2"></div>
+                </div>
+
+                <!-- Fri -->
+                <div class="bg-darkcard border border-darkborder rounded-xl p-3 flex flex-col min-h-[220px]">
+                    <div class="flex justify-between items-center border-b border-darkborder pb-2 mb-2">
+                        <span class="text-xs font-bold text-gray-300">Fri</span>
+                        <span class="text-[10px] bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded font-mono">Carousel</span>
+                    </div>
+                    <div id="day-fri" class="flex-1 space-y-2"></div>
+                </div>
+
+                <!-- Sat -->
+                <div class="bg-darkcard border border-darkborder rounded-xl p-3 flex flex-col min-h-[220px]">
+                    <div class="flex justify-between items-center border-b border-darkborder pb-2 mb-2">
+                        <span class="text-xs font-bold text-gray-300">Sat</span>
+                        <span class="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded font-mono">Networking</span>
+                    </div>
+                    <div id="day-sat" class="flex-1 space-y-2"></div>
+                </div>
+
+                <!-- Sun -->
+                <div class="bg-darkcard border border-darkborder rounded-xl p-3 flex flex-col min-h-[220px]">
+                    <div class="flex justify-between items-center border-b border-darkborder pb-2 mb-2">
+                        <span class="text-xs font-bold text-gray-300">Sun</span>
+                        <span class="text-[10px] bg-green-500/10 text-green-400 px-1.5 py-0.5 rounded font-mono">Rest / Story</span>
+                    </div>
+                    <div id="day-sun" class="flex-1 space-y-2"></div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-darkcard border border-brand-500/50 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 translate-y-20 opacity-0 transition-all duration-300 z-50 pointer-events-none">
+        <div class="w-2 h-2 rounded-full bg-brand-500"></div>
+        <span id="toast-message" class="text-xs font-medium">Notification message</span>
+    </div>
+
+    <!-- Application Core Logic -->
+    <script>
+        // State Management
+        let appState = {
+            format: 'carousel', // 'carousel' or 'reel'
+            theme: 'dark', // 'dark', 'gradient', 'minimal', 'neon'
+            aspectRatio: '4-5', // '4-5' or '1-1'
+            activeSlideIndex: 0,
+            topic: '',
+            hook: '',
+            valuePoints: [],
+            cta: '',
+            caption: '',
+            plannerPosts: [
+                { id: 1, day: 'mon', type: 'Reel', title: '3 Hook Strategies for Reels', status: 'Ready' },
+                { id: 2, day: 'tue', type: 'Carousel', title: 'Typography Principles 101', status: 'Scheduled' }
+            ]
+        };
+
+        // Preset Library
+        const PRESETS = {
+            design_tips: {
+                topic: "3 UI Design Rules That Instantly Upgrade Your App",
+                hook: "Stop making your apps look amateur in 2026! 🛑",
+                points: [
+                    "Rule 1: Use 60-30-10 color distribution for natural visual balance.",
+                    "Rule 2: Never use pure black (#000000) for text. Use deep slate darks.",
+                    "Rule 3: Keep padding inside buttons twice as wide as vertical height."
+                ],
+                cta: "Save this guide and tag a fellow designer below! 💾"
+            },
+            case_study: {
+                topic: "How We Scaled Client Reach from 2k to 150k in 30 Days",
+                hook: "We stopped posting daily and did THIS instead... 📈",
+                points: [
+                    "Phase 1: Shifted from random single photos to educational Carousels.",
+                    "Phase 2: Focused 100% on Shares and Saves instead of Likes.",
+                    "Phase 3: Standardized high-contrast cover hooks that stop scrolling."
+                ],
+                cta: "Comment 'SCALE' and I'll send you our full breakdown audit PDF!"
+            },
+            step_guide: {
+                topic: "5-Step Workflow to Create 1 Week of Posts in 1 Hour",
+                hook: "How to never run out of Instagram content ideas again 💡",
+                points: [
+                    "Step 1: Batch outline 3 core value topics into bullet points.",
+                    "Step 2: Plug topics into InstaFlow Content Studio templates.",
+                    "Step 3: Auto-generate Carousel graphics and export slide deck.",
+                    "Step 4: Schedule everything out for peak engagement hours."
+                ],
+                cta: "Drop a comment if you want more batching workflows! 👇"
+            },
+            showcase: {
+                topic: "Brand Identity Redesign for Urban Coffee Roasters",
+                hook: "Before vs After: Turning a local coffee shop into a cult brand ☕",
+                points: [
+                    "Challenge: Outdated logo was hard to read on packaging.",
+                    "Solution: Crafted bold minimalist geometric mark with warm palette.",
+                    "Result: Retail sales jumped +40% in the first month post-rebrand."
+                ],
+                cta: "Which version do you prefer? Let me know in the comments!"
+            }
+        };
+
+        // Initial Load
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            applyPreset('design_tips');
+            renderCalendar();
+            renderGrid();
+        });
+
+        // Tab Navigation
+        function switchTab(tab) {
+            document.querySelectorAll('.view-panel').forEach(panel => panel.classList.add('hidden'));
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-600', 'text-white', 'shadow');
+                btn.classList.add('text-gray-400');
+            });
+            
+            const activeBtn = document.getElementById(`tab-btn-${tab}`);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-brand-600', 'text-white', 'shadow');
+                activeBtn.classList.remove('text-gray-400');
+            }
+
+            if(tab === 'feed') renderGrid();
+        }
+
+        // Apply Content Presets
+        function applyPreset(key) {
+            const data = PRESETS[key];
+            if (!data) return;
+
+            document.getElementById('input-topic').value = data.topic;
+            document.getElementById('input-hook').value = data.hook;
+            document.getElementById('input-cta').value = data.cta;
+
+            const container = document.getElementById('value-points-container');
+            container.innerHTML = '';
+            data.points.forEach(pt => addValuePoint(pt));
+
+            updateContent();
+            generateHashtags();
+            showToast("Preset strategy loaded into editor!");
+        }
+
+        // Value Point Handlers
+        function addValuePoint(text = '') {
+            const container = document.getElementById('value-points-container');
+            const div = document.createElement('div');
+            div.className = "flex items-center space-x-2";
+            div.innerHTML = `
+                <input type="text" value="${text}" oninput="updateContent()" placeholder="e.g. Rule 1: Use high contrast text" class="value-pt-input flex-1 bg-darkbg border border-darkborder rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500 text-white">
+                <button onclick="removeValuePoint(this)" class="text-gray-500 hover:text-red-400 p-1">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+            `;
+            container.appendChild(div);
+            lucide.createIcons();
+            updateContent();
+        }
+
+        function removeValuePoint(btn) {
+            btn.parentElement.remove();
+            updateContent();
+        }
+
+        // Update Content State & Canvas Render
+        function updateContent() {
+            appState.topic = document.getElementById('input-topic').value || 'Post Topic Title';
+            appState.hook = document.getElementById('input-hook').value || 'Your Scroll-Stopping Hook Here';
+            appState.cta = document.getElementById('input-cta').value || 'Call to Action Here';
+
+            const ptInputs = document.querySelectorAll('.value-pt-input');
+            appState.valuePoints = [];
+            ptInputs.forEach(i => {
+                if (i.value.trim()) appState.valuePoints.push(i.value.trim());
+            });
+
+            // Auto-compile Caption
+            let captionText = `${appState.topic}\n\n${appState.hook}\n\nKey Takeaways:\n`;
+            appState.valuePoints.forEach((pt, idx) => {
+                captionText += `${idx + 1}. ${pt}\n`;
+            });
+            captionText += `\n${appState.cta}\n\n#instagramgrowth #contentcreator #designstrategy`;
+            
+            document.getElementById('input-caption').value = captionText;
+            
+            renderSlideCanvas();
+            renderReelScript();
+        }
+
+        // Carousel Slide Renderer
+        function renderSlideCanvas() {
+            const totalSlides = 1 + appState.valuePoints.length + 1; // Hook + Value Points + CTA
+            if (appState.activeSlideIndex >= totalSlides) appState.activeSlideIndex = 0;
+
+            const badge = document.getElementById('slide-badge');
+            const title = document.getElementById('slide-title');
+            const desc = document.getElementById('slide-desc');
+            const counter = document.getElementById('slide-counter');
+
+            counter.textContent = `Slide ${appState.activeSlideIndex + 1} of ${totalSlides}`;
+
+            if (appState.activeSlideIndex === 0) {
+                // Hook Slide
+                badge.textContent = "COVER / HOOK";
+                title.textContent = appState.hook;
+                desc.textContent = appState.topic;
+            } else if (appState.activeSlideIndex <= appState.valuePoints.length) {
+                // Point Slide
+                const ptIndex = appState.activeSlideIndex - 1;
+                badge.textContent = `TIP #${ptIndex + 1}`;
+                title.textContent = `Point #${ptIndex + 1}`;
+                desc.textContent = appState.valuePoints[ptIndex];
+            } else {
+                // CTA Slide
+                badge.textContent = "CALL TO ACTION";
+                title.textContent = "Take Action!";
+                desc.textContent = appState.cta;
+            }
+
+            // Slide Dot Indicators
+            const dotsContainer = document.getElementById('slide-dots-indicator');
+            dotsContainer.innerHTML = '';
+            for (let i = 0; i < totalSlides; i++) {
+                const dot = document.createElement('span');
+                dot.className = `w-1.5 h-1.5 rounded-full ${i === appState.activeSlideIndex ? 'bg-brand-500' : 'bg-white/30'}`;
+                dotsContainer.appendChild(dot);
+            }
+        }
+
+        function renderReelScript() {
+            document.getElementById('reel-hook-text').textContent = `"${appState.hook}"`;
+            document.getElementById('reel-cta-text').textContent = `"${appState.cta}"`;
+
+            const bodyContainer = document.getElementById('reel-body-text');
+            bodyContainer.innerHTML = '';
+            if(appState.valuePoints.length === 0) {
+                bodyContainer.innerHTML = '<p class="text-gray-400">Add value points in the form to populate scenes.</p>';
+            } else {
+                appState.valuePoints.forEach((pt, i) => {
+                    const p = document.createElement('p');
+                    p.textContent = `Scene ${i+1}: Briefly explain - "${pt}"`;
+                    bodyContainer.appendChild(p);
+                });
+            }
+        }
+
+        // Navigation for Slides
+        function nextSlide() {
+            const totalSlides = 1 + appState.valuePoints.length + 1;
+            appState.activeSlideIndex = (appState.activeSlideIndex + 1) % totalSlides;
+            renderSlideCanvas();
+        }
+
+        function prevSlide() {
+            const totalSlides = 1 + appState.valuePoints.length + 1;
+            appState.activeSlideIndex = (appState.activeSlideIndex - 1 + totalSlides) % totalSlides;
+            renderSlideCanvas();
+        }
+
+        // Format Switcher
+        function setFormat(fmt) {
+            appState.format = fmt;
+            const carouselBtn = document.getElementById('fmt-btn-carousel');
+            const reelBtn = document.getElementById('fmt-btn-reel');
+            const slideCanvas = document.getElementById('slide-canvas');
+            const reelCanvas = document.getElementById('reel-script-canvas');
+
+            if (fmt === 'carousel') {
+                carouselBtn.className = "px-3 py-1 rounded text-xs font-semibold bg-brand-600 text-white transition-all";
+                reelBtn.className = "px-3 py-1 rounded text-xs font-semibold text-gray-400 hover:text-white transition-all";
+                slideCanvas.classList.remove('hidden');
+                reelCanvas.classList.add('hidden');
+            } else {
+                reelBtn.className = "px-3 py-1 rounded text-xs font-semibold bg-brand-600 text-white transition-all";
+                carouselBtn.className = "px-3 py-1 rounded text-xs font-semibold text-gray-400 hover:text-white transition-all";
+                slideCanvas.classList.add('hidden');
+                reelCanvas.classList.remove('hidden');
+            }
+        }
+
+        // Styling Controls
+        function setThemeStyle(theme) {
+            appState.theme = theme;
+            const slide = document.getElementById('slide-canvas');
+            slide.className = slide.className.replace(/bg-\S+/g, '');
+
+            if (theme === 'dark') {
+                slide.style.background = '#111827';
+                slide.style.color = '#ffffff';
+            } else if (theme === 'gradient') {
+                slide.style.background = 'linear-gradient(45deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%)';
+                slide.style.color = '#ffffff';
+            } else if (theme === 'minimal') {
+                slide.style.background = '#f8fafc';
+                slide.style.color = '#0f172a';
+            } else if (theme === 'neon') {
+                slide.style.background = '#2e1065';
+                slide.style.color = '#f472b6';
+            }
+            showToast(`Applied ${theme.toUpperCase()} visual theme`);
+        }
+
+        function setAspectRatio(ratio) {
+            appState.aspectRatio = ratio;
+            const slide = document.getElementById('slide-canvas');
+            const btn45 = document.getElementById('ratio-btn-4-5');
+            const btn11 = document.getElementById('ratio-btn-1-1');
+
+            if (ratio === '4-5') {
+                slide.classList.remove('slide-aspect-1-1');
+                slide.classList.add('slide-aspect-4-5');
+                btn45.className = "px-2.5 py-1 text-[11px] font-bold rounded bg-brand-600 text-white";
+                btn11.className = "px-2.5 py-1 text-[11px] font-bold rounded text-gray-400 hover:text-white";
+            } else {
+                slide.classList.remove('slide-aspect-4-5');
+                slide.classList.add('slide-aspect-1-1');
+                btn11.className = "px-2.5 py-1 text-[11px] font-bold rounded bg-brand-600 text-white";
+                btn45.className = "px-2.5 py-1 text-[11px] font-bold rounded text-gray-400 hover:text-white";
+            }
+        }
+
+        // Auto Hashtags Generator
+        function generateHashtags() {
+            const tags = [
+                "#instagramtips", "#contentcreation", "#graphicdesign", "#designersofinstagram", 
+                "#socialmediastrategy", "#creatorsmindset", "#carouselposts", "#growthhacking",
+                "#uiuxdesign", "#digitalmarketing"
+            ];
+            const captionInput = document.getElementById('input-caption');
+            captionInput.value += "\n\n" + tags.join(" ");
+            showToast("Hashtags appended to caption!");
+        }
+
+        // Copy Caption
+        function copyCaption() {
+            const captionInput = document.getElementById('input-caption');
+            captionInput.select();
+            navigator.clipboard.writeText(captionInput.value);
+            showToast("Caption & Hashtags copied to clipboard!");
+        }
+
+        // Render 3x3 Instagram Feed
+        function renderGrid() {
+            const container = document.getElementById('instagram-grid-container');
+            container.innerHTML = '';
+
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = "aspect-square bg-darkbg border border-darkborder rounded-xl flex flex-col items-center justify-center p-3 relative overflow-hidden group shadow-inner";
+
+                if (i === 0) {
+                    // Preview current draft
+                    cell.className += " border-2 border-brand-500 bg-brand-500/10";
+                    cell.innerHTML = `
+                        <div class="absolute top-2 right-2 bg-brand-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">NEW DRAFT</div>
+                        <i data-lucide="sparkles" class="w-6 h-6 text-brand-500 mb-1"></i>
+                        <span class="text-[11px] font-bold text-center text-white line-clamp-2">${appState.hook || 'Current Post Preview'}</span>
+                    `;
+                } else {
+                    const icons = ['image', 'video', 'layers', 'grid'];
+                    const randIcon = icons[i % icons.length];
+                    cell.innerHTML = `
+                        <i data-lucide="${randIcon}" class="w-5 h-5 text-gray-600 mb-1"></i>
+                        <span class="text-[10px] text-gray-500">Grid Post #${9 - i}</span>
+                    `;
+                }
+                container.appendChild(cell);
+            }
+            lucide.createIcons();
+        }
+
+        // Save Post to Calendar
+        function saveToPlanner() {
+            const newPost = {
+                id: Date.now(),
+                day: 'wed',
+                type: appState.format === 'carousel' ? 'Carousel' : 'Reel',
+                title: appState.topic || 'Untitled Post',
+                status: 'Ready'
+            };
+            appState.plannerPosts.push(newPost);
+            renderCalendar();
+            showToast("Post saved to Planner Calendar!");
+        }
+
+        function renderCalendar() {
+            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            days.forEach(day => {
+                const dayContainer = document.getElementById(`day-${day}`);
+                if (!dayContainer) return;
+                dayContainer.innerHTML = '';
+
+                const posts = appState.plannerPosts.filter(p => p.day === day);
+                posts.forEach(p => {
+                    const card = document.createElement('div');
+                    card.className = "p-2 bg-darkbg border border-darkborder rounded-lg text-xs space-y-1 shadow-sm";
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center text-[10px] text-gray-400">
+                            <span class="font-bold text-brand-500">${p.type}</span>
+                            <span class="bg-gray-800 px-1.5 py-0.5 rounded text-[9px] text-green-400">${p.status}</span>
+                        </div>
+                        <p class="font-medium text-white truncate">${p.title}</p>
+                    `;
+                    dayContainer.appendChild(card);
+                });
+            });
+        }
+
+        function clearCalendar() {
+            appState.plannerPosts = [];
+            renderCalendar();
+            showToast("Calendar cleared.");
+        }
+
+        // Export Canvas Slide Image
+        function downloadCurrentSlide() {
+            const canvas = document.getElementById('slide-canvas');
+            showToast("Generating image export...");
+            html2canvas(canvas).then(c => {
+                const link = document.createElement('a');
+                link.download = `instagram-slide-${appState.activeSlideIndex + 1}.png`;
+                link.href = c.toDataURL();
+                link.click();
+                showToast("Slide image downloaded!");
+            });
+        }
+
+        // Export Full Content Summary
+        function exportCurrentPost() {
+            const summary = `
+========================================
+INSTAGRAM CONTENT SUMMARY & STRATEGY
+========================================
+Topic: ${appState.topic}
+Format: ${appState.format.toUpperCase()}
+Hook: ${appState.hook}
+
+VALUE POINTS:
+${appState.valuePoints.map((pt, i) => `${i + 1}. ${pt}`).join('\n')}
+
+CTA:
+${appState.cta}
+
+CAPTION & HASHTAGS:
+${document.getElementById('input-caption').value}
+========================================
+            `;
+
+            const blob = new Blob([summary], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${appState.topic.toLowerCase().replace(/\s+/g, '-')}-strategy.txt`;
+            link.click();
+            showToast("Strategy summary downloaded!");
+        }
+
+        // Notification Toast Helper
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            toastMsg.textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
